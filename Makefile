@@ -9,14 +9,16 @@ SELINUX1 := :z
 SELINUX2 := ,z
 endif
 
-.PHONY: all left clean_firmware clean_image clean
+.PHONY: all left clean_firmware clean_image clean_build clean
 
-all:
+all: clean_firmware
 	$(shell bin/get_version.sh >> /dev/null)
 	$(DOCKER) build --tag zmk --file Dockerfile .
+	$(DOCKER) volume create zmk-build
 	$(DOCKER) run --rm -it --name zmk \
 		-v $(PWD)/firmware:/app/firmware$(SELINUX1) \
 		-v $(PWD)/config:/app/config:ro$(SELINUX2) \
+		-v zmk-build:/app/build \
 		-e TIMESTAMP=$(TIMESTAMP) \
 		-e COMMIT=$(COMMIT) \
 		-e BUILD_RIGHT=true \
@@ -26,9 +28,11 @@ all:
 left:
 	$(shell bin/get_version.sh >> /dev/null)
 	$(DOCKER) build --tag zmk --file Dockerfile .
+	$(DOCKER) volume create zmk-build
 	$(DOCKER) run --rm -it --name zmk \
 		-v $(PWD)/firmware:/app/firmware$(SELINUX1) \
 		-v $(PWD)/config:/app/config:ro$(SELINUX2) \
+		-v zmk-build:/app/build \
 		-e TIMESTAMP=$(TIMESTAMP) \
 		-e COMMIT=$(COMMIT) \
 		-e BUILD_RIGHT=false \
@@ -41,4 +45,7 @@ clean_firmware:
 clean_image:
 	$(DOCKER) image rm zmk docker.io/zmkfirmware/zmk-build-arm:stable
 
-clean: clean_firmware clean_image
+clean_build:
+	$(DOCKER) volume rm zmk-build
+
+clean: clean_firmware clean_image clean_build
