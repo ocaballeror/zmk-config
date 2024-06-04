@@ -1,2 +1,6 @@
 firmware/*
 firmware.zip
+zephyr/
+.west/
+modules/
+zmk/
